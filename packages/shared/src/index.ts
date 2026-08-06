@@ -51,4 +51,8 @@ export {
   isSessionExpiredFlagSet,
   getLastSessionExpiredSource,
   SessionExpiredProvider,
+  AuthProvider,
+  AuthGuard,
+  useAuth,
 } from "./auth";
+export type { AuthContextValue, LoginFn, LogoutFn } from "./auth";
