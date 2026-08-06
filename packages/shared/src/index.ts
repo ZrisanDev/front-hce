@@ -52,6 +52,7 @@ export {
   resetSessionExpired,
   isSessionExpiredFlagSet,
   getLastSessionExpiredSource,
+  tryRefresh,
   SessionExpiredProvider,
   AuthProvider,
   AuthGuard,
