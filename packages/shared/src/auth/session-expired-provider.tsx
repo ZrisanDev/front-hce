@@ -56,7 +56,7 @@ export function SessionExpiredProvider({ children }: { children: ReactNode }) {
           <DialogHeader>
             <DialogTitle>Sesión expirada</DialogTitle>
             <DialogDescription>
-              Tu sesión venció a los 30 min.
+              Tu sesión venció a los 15 min.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
