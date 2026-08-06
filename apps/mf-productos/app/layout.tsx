@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { AuthProvider, SessionExpiredProvider } from "@hce/shared";
+import { Toaster } from "@hce/shared/ui";
 
 export const metadata = {
   title: "Productos · HCE",
@@ -15,10 +16,14 @@ export default function Layout({ children }: { children: ReactNode }) {
          * its own AuthProvider + SessionExpiredProvider. The session singleton
          * in @hce/shared is shared module state, so a 401 raised by this zone's
          * apiClient call surfaces the modal here.
+         *
+         * <Toaster> mounts the sonner viewport so toast() calls from the zone's
+         * forms (registrar/actualizar) actually render.
          */}
         <AuthProvider>
           <SessionExpiredProvider>{children}</SessionExpiredProvider>
         </AuthProvider>
+        <Toaster />
       </body>
     </html>
   );
