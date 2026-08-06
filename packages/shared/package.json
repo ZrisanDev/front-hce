@@ -1,0 +1,20 @@
+{
+  "name": "@hce/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./types": "./src/types/index.ts",
+    "./api": "./src/api/index.ts",
+    "./auth": "./src/auth/index.ts",
+    "./ui": "./src/ui/index.ts",
+    "./events": "./src/events/index.ts",
+    "./routes": "./src/routes/index.ts"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "^5"
+  }
+}
