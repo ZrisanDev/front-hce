@@ -45,7 +45,7 @@ import { Controller } from "react-hook-form";
 const itemSchema = z.object({
   idProducto: z.coerce.number().int().positive("Seleccione un producto"),
   cantidad: z.coerce.number().int().positive("La cantidad debe ser > 0"),
-  precio: z.coerce.number().nonnegative("El precio debe ser ≥ 0"),
+  precio: z.coerce.number().positive("El precio debe ser > 0"),
 });
 
 const formSchema = z.object({
