@@ -1,0 +1,159 @@
+# docker-compose for the front-hce Multi-Zones frontend.
+#
+# Brings up the shell (host, :3000) and the four zones (mf-productos..mf-kardex,
+# :3001-:3004). Each service builds from the single generic Dockerfile with a
+# per-app APP_DIR. The zones are isolated Next apps (Multi-Zones); the shell
+# rewrites /<zona>/* to each zone and /api/* to the backend.
+#
+# All service env vars below are SERVER-SIDE ONLY. Nothing is NEXT_PUBLIC_*:
+# the browser never learns the backend host — every request is same-origin
+# /api/* proxied by each app's next.config.ts rewrites.
+#
+# -----------------------------------------------------------------------------
+# BACKEND (back-hce — separate repo, NOT built here)
+# -----------------------------------------------------------------------------
+# back-hce is a NestJS microservice stack (db + auth + inventario + gateway)
+# with its own docker-compose.yml. It has NO single root Dockerfile, and the
+# gateway alone cannot run (it proxies auth/inventario which need the DB). So
+# the backend is intentionally NOT a built service here. Two ways to wire it:
+#
+#   EASY (backend on the host): start back-hce's gateway on :5050 on your host
+#     (its normal dev port), then point the frontend at it from the container:
+#       BACKEND_URL=http://host.docker.internal:5050
+#     `extra_hosts` below enables host.docker.internal on Linux out of the box.
+#
+#   DOCKER-NATIVE (shared network): bring back-hce up on this network with a
+#     `backend` network alias, then the default BACKEND_URL=http://backend:5050
+#     resolves. A commented `backend` service sketch is at the bottom.
+# -----------------------------------------------------------------------------
+
+services:
+  shell:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_DIR: shell
+    container_name: hce-shell
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: "3000"
+      # Same-origin API proxy target (server-side only).
+      BACKEND_URL: http://backend:5050
+      # Per-zone upstreams for Multi-Zones rewrites (server-side only).
+      API_ZONA_PRODUCTOS: http://mf-productos:3001
+      API_ZONA_COMPRAS: http://mf-compras:3002
+      API_ZONA_VENTAS: http://mf-ventas:3003
+      API_ZONA_KARDEX: http://mf-kardex:3004
+    depends_on:
+      - mf-productos
+      - mf-compras
+      - mf-ventas
+      - mf-kardex
+    restart: unless-stopped
+    networks:
+      - hce-frontend
+    extra_hosts:
+      # Lets the container reach a backend running on the host via
+      # http://host.docker.internal:5050 (Linux needs this explicit mapping).
+      - "host.docker.internal:host-gateway"
+
+  mf-productos:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_DIR: mf-productos
+    container_name: hce-mf-productos
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: "3001"
+      BACKEND_URL: http://backend:5050
+    restart: unless-stopped
+    networks:
+      - hce-frontend
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  mf-compras:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_DIR: mf-compras
+    container_name: hce-mf-compras
+    ports:
+      - "3002:3002"
+    environment:
+      PORT: "3002"
+      BACKEND_URL: http://backend:5050
+    restart: unless-stopped
+    networks:
+      - hce-frontend
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  mf-ventas:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_DIR: mf-ventas
+    container_name: hce-mf-ventas
+    ports:
+      - "3003:3003"
+    environment:
+      PORT: "3003"
+      BACKEND_URL: http://backend:5050
+    restart: unless-stopped
+    networks:
+      - hce-frontend
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  mf-kardex:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_DIR: mf-kardex
+    container_name: hce-mf-kardex
+    ports:
+      - "3004:3004"
+    environment:
+      PORT: "3004"
+      BACKEND_URL: http://backend:5050
+    restart: unless-stopped
+    networks:
+      - hce-frontend
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # ---------------------------------------------------------------------------
+  # BACKEND (sketch — disabled). back-hce's gateway alone is NOT runnable; the
+  # full stack (db + auth + inventario + gateway) lives in back-hce's own
+  # docker-compose.yml. Prefer bringing that up directly. Uncomment + adjust only
+  # if you wire the whole backend stack onto the `hce-frontend` network with a
+  # `backend` alias so BACKEND_URL=http://backend:5050 resolves.
+  # ---------------------------------------------------------------------------
+  # backend:
+  #   build:
+  #     context: ../back-hce
+  #     dockerfile: apps/gateway/Dockerfile
+  #   container_name: hce-backend
+  #   environment:
+  #     PORT: "5050"
+  #     SERVICE_AUTH_URL: http://auth:3001
+  #     SERVICE_INVENTARIO_URL: http://inventario:3002
+  #   ports:
+  #     - "5050:5050"
+  #   networks:
+  #     hce-frontend:
+  #       aliases:
+  #         - backend
+
+networks:
+  hce-frontend:
+    driver: bridge
