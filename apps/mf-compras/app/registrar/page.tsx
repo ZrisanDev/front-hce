@@ -181,7 +181,7 @@ function RegistrarCompra() {
                       </SelectTrigger>
                       <SelectContent>
                         {productos.map((p) => (
-                          <SelectItem key={p.idProducto} value={String(p.idProducto)}>
+                          <SelectItem key={p.id} value={String(p.id)}>
                             {p.nombreProducto} (lote {p.nroLote})
                           </SelectItem>
                         ))}

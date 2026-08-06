@@ -198,8 +198,8 @@ function RegistrarVenta() {
                       <SelectContent>
                         {productos.map((p) => (
                           <SelectItem
-                            key={p.idProducto}
-                            value={String(p.idProducto)}
+                            key={p.id}
+                            value={String(p.id)}
                           >
                             {p.nombreProducto} (lote {p.nroLote})
                           </SelectItem>

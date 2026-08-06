@@ -4,6 +4,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider, SessionExpiredProvider } from "@hce/shared";
 import { LogoutButton } from "../components/logout-button";
+import { TooltipProvider } from "@/components/ui/tooltip";
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,11 +43,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
          */}
         <AuthProvider>
           <SessionExpiredProvider>
+            <TooltipProvider>
             <header className="border-b border-border bg-background">
               <nav className="mx-auto flex w-full max-w-6xl items-center gap-6 px-6 py-3">
                 <a href="/" className="text-base font-semibold">
                   HCE
-                </a>
+                <a/>
                 {/* Cross-zone navigation: plain <a> forces a hard navigation.
                     next/link soft-navigates and breaks between zones. */}
                 <a href="/productos" className="text-sm hover:underline">
@@ -65,7 +68,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                 </div>
               </nav>
             </header>
-            <main className="flex-1">{children}</main>
+              <main className="flex-1">{children}</main>
+            </TooltipProvider>
           </SessionExpiredProvider>
         </AuthProvider>
       </body>

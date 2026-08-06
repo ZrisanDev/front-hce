@@ -114,8 +114,8 @@ function ProductosList() {
           </TableHeader>
           <TableBody>
             {productos.map((p) => (
-              <TableRow key={p.idProducto}>
-                <TableCell>{p.idProducto}</TableCell>
+              <TableRow key={p.id}>
+                <TableCell>{p.id}</TableCell>
                 <TableCell>{p.nombreProducto}</TableCell>
                 <TableCell>{p.nroLote}</TableCell>
                 <TableCell>{MONEDA.format(p.costo)}</TableCell>
@@ -136,7 +136,7 @@ function ProductosList() {
                 </TableCell>
                 <TableCell>
                   <a
-                    href={`${ROUTES.productos}/actualizar/${p.idProducto}`}
+                    href={`${ROUTES.productos}/actualizar/${p.id}`}
                     className={buttonVariants({ variant: "outline", size: "sm" })}
                   >
                     Editar

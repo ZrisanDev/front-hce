@@ -178,7 +178,7 @@ function KardexList() {
             <SelectContent>
               <SelectItem value={ALL}>Todos</SelectItem>
               {productos.map((p) => (
-                <SelectItem key={p.idProducto} value={String(p.idProducto)}>
+                <SelectItem key={p.id} value={String(p.id)}>
                   {p.nombreProducto}
                 </SelectItem>
               ))}

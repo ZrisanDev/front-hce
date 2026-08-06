@@ -15,7 +15,7 @@ export type TipoDocumentoOrigen = "COMPRA" | "VENTA";
 export type AuthStatus = "checking" | "authenticated" | "guest";
 
 export interface Producto {
-  idProducto: number;
+  id: number;
   nombreProducto: string;
   nroLote: string;
   fecRegistro: string;

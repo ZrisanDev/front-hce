@@ -79,7 +79,7 @@ function ActualizarProducto({ id }: { id: string }) {
       .list()
       .then((data) => {
         if (cancelled) return;
-        const found = (data ?? []).find((p) => p.idProducto === numericId);
+        const found = (data ?? []).find((p) => p.id === numericId);
         if (!found) {
           setLoadError("Producto no encontrado.");
           return;
@@ -154,7 +154,7 @@ function ActualizarProducto({ id }: { id: string }) {
   return (
     <div className="mx-auto w-full max-w-xl px-6 py-8">
       <h1 className="mb-6 text-2xl font-semibold">
-        Actualizar producto <span className="text-muted-foreground">#{producto.idProducto}</span>
+        Actualizar producto <span className="text-muted-foreground">#{producto.id}</span>
       </h1>
 
       {submitError ? (
