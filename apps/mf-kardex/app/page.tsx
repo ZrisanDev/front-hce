@@ -11,9 +11,10 @@
  * aplicados" (REQ-KARDEX-01). "Limpiar filtros" resets the bar.
  *
  * Filters are plain controlled state (no react-hook-form): they're simple
- * selects/inputs and rhf would be overkill. NO cross-zone event listener here
- * (onInventoryChange / auto-refresh is PR6 / Fase 5); the page only refetches
- * on explicit "Aplicar filtros" / "Limpiar".
+ * selects/inputs and rhf would be overkill. Cross-zone eventing (Fase 5): the
+ * page subscribes to onInventoryChange so that when a compra/venta is
+ * registered in another zone/tab it re-fetches the kardex with the currently
+ * applied filters; the subscription is cleaned up on unmount.
  *
  * The producto Select is populated from GET /api/productos. The tipo Select
  * maps Entrada/Salida to idTipoMovimiento 1/2 (undefined = Todos). Sentinels
@@ -22,7 +23,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { ApiError, AuthGuard, apiClient } from "@hce/shared";
+import { ApiError, AuthGuard, apiClient, onInventoryChange } from "@hce/shared";
 import type { KardexFilters, MovimientoKardex, Producto } from "@hce/shared";
 import {
   Alert,
@@ -137,6 +138,18 @@ function KardexList() {
     const cancel = fetchKardex({});
     return cancel;
   }, [fetchKardex]);
+
+  // Cross-zone inventory refresh (F5-T3): when a compra/venta is registered in
+  // another zone or tab, the @hce/shared window event fires; re-fetch the
+  // kardex with the currently-applied filters. The effect re-subscribes when a
+  // filter changes so the callback closure is always fresh, and the returned
+  // unsubscribe cleans up on unmount.
+  useEffect(() => {
+    const unsubscribe = onInventoryChange(() => {
+      fetchKardex(buildFilters(fProducto, fInicio, fFin, fTipo));
+    });
+    return unsubscribe;
+  }, [fProducto, fInicio, fFin, fTipo, fetchKardex, buildFilters]);
 
   function aplicarFiltros() {
     fetchKardex(buildFilters(fProducto, fInicio, fFin, fTipo));
