@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { AuthProvider, SessionExpiredProvider } from "@hce/shared";
+import { AppLayout, AuthProvider, SessionExpiredProvider } from "@hce/shared";
 import { Toaster } from "@hce/shared/ui";
 
 export const metadata = {
@@ -21,7 +21,9 @@ export default function Layout({ children }: { children: ReactNode }) {
          * forms (registrar/actualizar) actually render.
          */}
         <AuthProvider>
-          <SessionExpiredProvider>{children}</SessionExpiredProvider>
+          <SessionExpiredProvider>
+            <AppLayout zone="Productos">{children}</AppLayout>
+          </SessionExpiredProvider>
         </AuthProvider>
         <Toaster />
       </body>

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { AuthProvider, SessionExpiredProvider } from "@hce/shared";
+import { AppLayout, AuthProvider, SessionExpiredProvider } from "@hce/shared";
 
 export const metadata = {
   title: "Kardex · HCE",
@@ -17,7 +17,9 @@ export default function Layout({ children }: { children: ReactNode }) {
          * apiClient call surfaces the modal here.
          */}
         <AuthProvider>
-          <SessionExpiredProvider>{children}</SessionExpiredProvider>
+          <SessionExpiredProvider>
+            <AppLayout zone="Kardex">{children}</AppLayout>
+          </SessionExpiredProvider>
         </AuthProvider>
       </body>
     </html>
