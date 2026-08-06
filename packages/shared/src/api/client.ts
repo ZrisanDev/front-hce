@@ -15,13 +15,13 @@
 import { TriggerSessionExpired } from "../auth/session";
 import type {
   ActualizarProductoDto,
-  CompraDet,
+  Compra,
   DocDto,
   KardexFilters,
   MovimientoKardex,
   Producto,
   RegistrarProductoDto,
-  VentaDet,
+  Venta,
 } from "../types";
 
 /**
@@ -83,16 +83,25 @@ export async function req<T>(path: string, opts: ReqOpts = {}): Promise<T> {
   return res.json().catch(() => undefined as unknown as T) as Promise<T>;
 }
 
-/** Build a query string from kardex filters, omitting empty/undefined values. */
+/**
+ * Build a query string from kardex filters, omitting empty/undefined values.
+ *
+ * The TS-facing `KardexFilters` uses camelCase keys, but the back-hce
+ * ListarKardexQuery DTO binds snake_case query params
+ * (id_producto, fecha_inicio, fecha_fin, id_tipo_movimiento). Nest's global
+ * ValidationPipe runs `whitelist` + `forbidNonWhitelisted`, so camelCase keys
+ * would be silently dropped (and thus every filter ignored). We serialize to
+ * the backend's snake_case contract here.
+ */
 function buildQuery(filters: KardexFilters): string {
   const params = new URLSearchParams();
   if (filters.idProducto != null) {
-    params.set("idProducto", String(filters.idProducto));
+    params.set("id_producto", String(filters.idProducto));
   }
-  if (filters.fechaInicio) params.set("fechaInicio", filters.fechaInicio);
-  if (filters.fechaFin) params.set("fechaFin", filters.fechaFin);
+  if (filters.fechaInicio) params.set("fecha_inicio", filters.fechaInicio);
+  if (filters.fechaFin) params.set("fecha_fin", filters.fechaFin);
   if (filters.idTipoMovimiento != null) {
-    params.set("idTipoMovimiento", String(filters.idTipoMovimiento));
+    params.set("id_tipo_movimiento", String(filters.idTipoMovimiento));
   }
   const qs = params.toString();
   return qs; // may be ""
@@ -120,13 +129,13 @@ export const apiClient = {
   },
 
   compras: {
-    list: () => req<CompraDet[]>("/api/compras"),
+    list: () => req<Compra[]>("/api/compras"),
     create: (data: DocDto) =>
       req<void>("/api/compras", { method: "POST", body: data }),
   },
 
   ventas: {
-    list: () => req<VentaDet[]>("/api/ventas"),
+    list: () => req<Venta[]>("/api/ventas"),
     create: (data: DocDto) =>
       req<void>("/api/ventas", { method: "POST", body: data }),
   },

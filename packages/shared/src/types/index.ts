@@ -54,9 +54,14 @@ export interface DocDto {
   items: ItemDto[];
 }
 
+/**
+ * A single purchase line embedded in a Compra. Mirrors the back-hce
+ * CompraDetalle domain object. There is no cabecera FK on the line itself — it
+ * belongs to its parent Compra. GET /api/compras returns Compra[] where each
+ * entry embeds an array of these.
+ */
 export interface CompraDet {
   idCompraDet: number;
-  idCompraCab: number;
   idProducto: number;
   cantidad: number;
   precio: number;
@@ -65,15 +70,46 @@ export interface CompraDet {
   total: number;
 }
 
+/**
+ * A purchase document (cabecera + embedded detalles). Returned by
+ * GET /api/compras as Compra[]. `fecRegistro` is an ISO date string over the
+ * wire (the backend Date is serialized by Nest's default interceptor).
+ */
+export interface Compra {
+  idCompraCab: number;
+  fecRegistro: string;
+  subTotal: number;
+  igv: number;
+  total: number;
+  detalles: CompraDet[];
+}
+
+/**
+ * A single sale line embedded in a Venta. Mirrors the back-hce VentaDetalle
+ * domain object. GET /api/ventas returns Venta[] where each entry embeds an
+ * array of these.
+ */
 export interface VentaDet {
   idVentaDet: number;
-  idVentaCab: number;
   idProducto: number;
   cantidad: number;
   precio: number;
   subTotal: number;
   igv: number;
   total: number;
+}
+
+/**
+ * A sale document (cabecera + embedded detalles). Returned by GET /api/ventas
+ * as Venta[]. `fecRegistro` is an ISO date string over the wire.
+ */
+export interface Venta {
+  idVentaCab: number;
+  fecRegistro: string;
+  subTotal: number;
+  igv: number;
+  total: number;
+  detalles: VentaDet[];
 }
 
 export interface MovimientoKardex {

@@ -7,17 +7,14 @@
  * (count), Total. loading/error/empty states. Cross-zone-safe nav with plain
  * <a> built from ROUTES.compras.
  *
- * NOTE on typing: apiClient types compras.list() as CompraDet[] (PR2), but the
- * back-hce compra controller actually returns Compra[] with shape
- * { idCompraCab, fecRegistro, subTotal, igv, total, detalles[] } (see
- * back-hce/.../compra/domain/compra.ts). Per the PR4 rules we do NOT touch
- * @hce/shared types, so the real response shape is declared locally and the
- * apiClient result is cast to it. This is a surfaced PR2 type bug, not fixed
- * here.
+ * apiClient.compras.list() returns Compra[] (cabecera + embedded detalles),
+ * typed against @hce/shared since PASO 0 of PR5 corrected the shared types to
+ * match the back-hce contract.
  */
 
 import { useEffect, useState } from "react";
 import { ApiError, AuthGuard, ROUTES, apiClient } from "@hce/shared";
+import type { Compra } from "@hce/shared";
 import {
   Alert,
   AlertDescription,
@@ -31,25 +28,6 @@ import {
   TableRow,
   buttonVariants,
 } from "@hce/shared/ui";
-
-/** Real backend response shape (Compra domain object, camelCase). */
-interface CompraItemDetalle {
-  idCompraDet: number;
-  idProducto: number;
-  cantidad: number;
-  precio: number;
-  subTotal: number;
-  igv: number;
-  total: number;
-}
-interface CompraListItem {
-  idCompraCab: number;
-  fecRegistro: string;
-  subTotal: number;
-  igv: number;
-  total: number;
-  detalles: CompraItemDetalle[];
-}
 
 const MONEDA = new Intl.NumberFormat("es-PE", {
   minimumFractionDigits: 2,
@@ -69,7 +47,7 @@ export default function ComprasListPage() {
 }
 
 function ComprasList() {
-  const [compras, setCompras] = useState<CompraListItem[] | null>(null);
+  const [compras, setCompras] = useState<Compra[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -78,7 +56,7 @@ function ComprasList() {
       .list()
       .then((data) => {
         if (cancelled) return;
-        setCompras((data ?? []) as unknown as CompraListItem[]);
+        setCompras(data ?? []);
       })
       .catch((err: unknown) => {
         if (cancelled) return;

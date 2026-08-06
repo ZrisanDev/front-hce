@@ -20,6 +20,7 @@ export type {
   ApiError as ApiErrorShape,
   AuthSession,
   AuthStatus,
+  Compra,
   CompraDet,
   DocDto,
   EstadoProducto,
@@ -30,6 +31,7 @@ export type {
   RegistrarProductoDto,
   TipoDocumentoOrigen,
   TipoMovimiento,
+  Venta,
   VentaDet,
 } from "./types";
 
