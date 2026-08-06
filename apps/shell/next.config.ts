@@ -40,9 +40,10 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  serverActions: {
-    allowedOrigins: ["localhost:3000"],
-  },
+  // NOTE: `serverActions` was removed. In Next 16 the option moved to
+  // `experimental.serverActions` (see node_modules/next docs), and this app
+  // does not use Server Actions at all (spec: Client Components + fetch only),
+  // so the block is unnecessary. Omitting it keeps the config minimal.
 };
 
 export default nextConfig;

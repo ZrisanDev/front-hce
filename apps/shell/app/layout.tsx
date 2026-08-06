@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -17,7 +18,13 @@ export const metadata: Metadata = {
   description: "Sistema HCE — Multi-Zones",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+// NOTE: Next 16's `LayoutProps<'/'>` helper is a GLOBAL type emitted by
+// `next dev`/`next build`/`next typegen`. It does not exist for a plain `tsc`
+// run, so `Cannot find name 'LayoutProps'` fires. The root layout has no params
+// and no slots, so the inline `{ children: ReactNode }` shape (the form used by
+// every root-layout example in the Next 16 layout.md reference) is equivalent
+// and avoids depending on a prior type-generation step.
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="es"
