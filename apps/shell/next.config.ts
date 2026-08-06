@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "node:path";
 
 /**
  * Shell (host zone) — served on port 3000 with NO basePath.
@@ -17,6 +18,12 @@ const zone = (port: number, name: string) =>
   process.env[`API_ZONA_${name}`] ?? `http://localhost:${port}`;
 
 const nextConfig: NextConfig = {
+  // Standalone output for Docker (self-contained .next/standalone/server.js).
+  // Tracing root = monorepo root so the @hce/shared workspace package is
+  // included (it is also transpiled, but this is the documented safety net for
+  // monorepo standalone builds — see Next 16 docs output.md).
+  output: "standalone",
+  outputFileTracingRoot: path.resolve(process.cwd(), "../.."),
   async rewrites() {
     return [
       // 1) Same-origin API proxy (resolves CORS + SameSite for credentials).

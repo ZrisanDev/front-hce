@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "node:path";
 
 /**
  * Zone: Productos — port 3001, basePath /productos.
@@ -18,6 +19,11 @@ const nextConfig: NextConfig = {
   basePath: "/productos",
   assetPrefix: "/productos/",
   transpilePackages: ["@hce/shared"],
+  // Standalone output for Docker (self-contained .next/standalone/server.js).
+  // Tracing root = monorepo root so @hce/shared is included (see Next 16
+  // output.md monorepo caveat).
+  output: "standalone",
+  outputFileTracingRoot: path.resolve(process.cwd(), "../.."),
   async rewrites() {
     return [
       {
