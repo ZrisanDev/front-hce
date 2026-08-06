@@ -50,4 +50,5 @@ export {
   resetSessionExpired,
   isSessionExpiredFlagSet,
   getLastSessionExpiredSource,
+  SessionExpiredProvider,
 } from "./auth";
