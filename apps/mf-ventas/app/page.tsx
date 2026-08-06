@@ -4,10 +4,11 @@
  * Ventas — list page (F4-T6, REQ-VENTA-02).
  *
  * GET /api/ventas via apiClient.ventas.list() -> Venta[] (cabecera + embedded
- * detalles, typed in @hce/shared since PASO 0 of PR5). Columns: ID, Fecha,
- * Items (count), Total. loading/error/empty states. Cross-zone-safe nav with
- * plain <a> built from ROUTES.ventas (next/link cannot soft-navigate between
- * Multi-Zones).
+ * detalles, typed in @hce/shared since PASO 0 of PR5). Rendered in the shared
+ * <DataTable> (sorting, global search, pagination, column visibility).
+ * loading/error states; the empty state is handled by the DataTable
+ * emptyMessage. Cross-zone-safe nav with plain <a> built from ROUTES.ventas
+ * (next/link cannot soft-navigate between Multi-Zones).
  *
  * On 401 the apiClient fires TriggerSessionExpired and the zone-level modal
  * (mounted in the layout) surfaces; we only render the ApiError.message here.
@@ -20,14 +21,10 @@ import {
   Alert,
   AlertDescription,
   AlertTitle,
+  DataTable,
   Skeleton,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
   buttonVariants,
+  createDataTableColumnHelper,
 } from "@hce/shared/ui";
 
 const MONEDA = new Intl.NumberFormat("es-PE", {
@@ -38,6 +35,24 @@ const FECHA = new Intl.DateTimeFormat("es-PE", {
   dateStyle: "medium",
   timeStyle: "short",
 });
+
+const helper = createDataTableColumnHelper<Venta>();
+
+const columns = helper.columns([
+  helper.accessor("idVentaCab", { header: "ID" }),
+  helper.accessor("fecRegistro", {
+    header: "Fecha",
+    cell: ({ getValue }) => formatFecha(getValue()),
+  }),
+  helper.accessor("detalles", {
+    header: "Items",
+    cell: ({ getValue }) => getValue()?.length ?? 0,
+  }),
+  helper.accessor("total", {
+    header: "Total",
+    cell: ({ getValue }) => MONEDA.format(getValue()),
+  }),
+]);
 
 export default function VentasListPage() {
   return (
@@ -92,32 +107,13 @@ function VentasList() {
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
         </div>
-      ) : ventas.length === 0 ? (
-        <Alert>
-          <AlertTitle>Sin ventas</AlertTitle>
-          <AlertDescription>No hay ventas registradas todavía.</AlertDescription>
-        </Alert>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Fecha</TableHead>
-              <TableHead>Items</TableHead>
-              <TableHead>Total</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {ventas.map((v) => (
-              <TableRow key={v.idVentaCab}>
-                <TableCell>{v.idVentaCab}</TableCell>
-                <TableCell>{formatFecha(v.fecRegistro)}</TableCell>
-                <TableCell>{v.detalles?.length ?? 0}</TableCell>
-                <TableCell>{MONEDA.format(v.total)}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <DataTable
+          columns={columns}
+          data={ventas}
+          searchPlaceholder="Buscar ventas..."
+          emptyMessage="No hay ventas registradas todavía."
+        />
       )}
     </div>
   );

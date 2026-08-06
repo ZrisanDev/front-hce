@@ -5,10 +5,12 @@
  *
  * GET /api/kardex via apiClient.kardex.list(filters) where filters is a
  * KardexFilters built from the filter bar (producto / fecha inicio+fin / tipo
- * de movimiento). Columns: ID Movimiento, Fecha, Tipo (Badge ENTRADA/SALIDA),
- * Origen (COMPRA/VENTA), Producto, Cantidad. States: loading (Skeleton), error
- * (Alert), and an explicit empty state "Sin resultados para los filtros
- * aplicados" (REQ-KARDEX-01). "Limpiar filtros" resets the bar.
+ * de movimiento). Results render in the shared <DataTable> (sorting, global
+ * search, pagination, column visibility) with columns: ID Movimiento, Fecha,
+ * Tipo (Badge ENTRADA/SALIDA), Origen (COMPRA/VENTA), Producto, Cantidad.
+ * States: loading (Skeleton), error (Alert), and an explicit empty state "Sin
+ * resultados para los filtros aplicados" (REQ-KARDEX-01). "Limpiar filtros"
+ * resets the bar.
  *
  * Filters are plain controlled state (no react-hook-form): they're simple
  * selects/inputs and rhf would be overkill. Cross-zone eventing (Fase 5): the
@@ -31,6 +33,7 @@ import {
   AlertTitle,
   Badge,
   Button,
+  DataTable,
   Input,
   Label,
   Select,
@@ -39,12 +42,7 @@ import {
   SelectTrigger,
   SelectValue,
   Skeleton,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  createDataTableColumnHelper,
 } from "@hce/shared/ui";
 
 const FECHA = new Intl.DateTimeFormat("es-PE", {
@@ -54,6 +52,27 @@ const FECHA = new Intl.DateTimeFormat("es-PE", {
 
 /** Sentinel meaning "no filter" for base-ui Select values. */
 const ALL = "__all__";
+
+const helper = createDataTableColumnHelper<MovimientoKardex>();
+
+const columns = helper.columns([
+  helper.accessor("idMovimientoCab", { header: "ID Movimiento" }),
+  helper.accessor("fecRegistro", {
+    header: "Fecha",
+    cell: ({ getValue }) => formatFecha(getValue()),
+  }),
+  helper.accessor("tipoMovimiento", {
+    header: "Tipo",
+    cell: ({ getValue }) => (
+      <Badge variant={getValue() === "ENTRADA" ? "default" : "secondary"}>
+        {getValue()}
+      </Badge>
+    ),
+  }),
+  helper.accessor("tipoDocumentoOrigen", { header: "Origen" }),
+  helper.accessor("nombreProducto", { header: "Producto" }),
+  helper.accessor("cantidad", { header: "Cantidad" }),
+]);
 
 export default function KardexPage() {
   return (
@@ -247,44 +266,13 @@ function KardexList() {
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
         </div>
-      ) : movimientos.length === 0 ? (
-        <Alert>
-          <AlertTitle>Sin resultados</AlertTitle>
-          <AlertDescription>
-            Sin resultados para los filtros aplicados.
-          </AlertDescription>
-        </Alert>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID Movimiento</TableHead>
-              <TableHead>Fecha</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead>Origen</TableHead>
-              <TableHead>Producto</TableHead>
-              <TableHead>Cantidad</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {movimientos.map((m) => (
-              <TableRow key={m.idMovimientoCab}>
-                <TableCell>{m.idMovimientoCab}</TableCell>
-                <TableCell>{formatFecha(m.fecRegistro)}</TableCell>
-                <TableCell>
-                  <Badge
-                    variant={m.tipoMovimiento === "ENTRADA" ? "default" : "secondary"}
-                  >
-                    {m.tipoMovimiento}
-                  </Badge>
-                </TableCell>
-                <TableCell>{m.tipoDocumentoOrigen}</TableCell>
-                <TableCell>{m.nombreProducto}</TableCell>
-                <TableCell>{m.cantidad}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <DataTable
+          columns={columns}
+          data={movimientos}
+          searchPlaceholder="Buscar en kardex..."
+          emptyMessage="Sin resultados para los filtros aplicados."
+        />
       )}
     </div>
   );

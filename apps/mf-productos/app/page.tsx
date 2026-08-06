@@ -4,7 +4,8 @@
  * Productos — list page (F4-T1, REQ-PROD-02).
  *
  * Locked decision (design v2): NO filters. A simple GET /api/productos list
- * rendered in a table. The list is wrapped in <AuthGuard> so a guest is sent
+ * rendered in the shared <DataTable> (sorting, global search, pagination,
+ * column visibility). The list is wrapped in <AuthGuard> so a guest is sent
  * to the shell login and the optimistic-checking skeleton shows while the
  * AuthProvider resolves.
  *
@@ -23,20 +24,71 @@ import {
   AlertDescription,
   AlertTitle,
   Badge,
+  DataTable,
   Skeleton,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
   buttonVariants,
+  createDataTableColumnHelper,
 } from "@hce/shared/ui";
 
 const MONEDA = new Intl.NumberFormat("es-PE", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
+
+const FECHA = new Intl.DateTimeFormat("es-PE", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+});
+
+const helper = createDataTableColumnHelper<Producto>();
+
+const columns = helper.columns([
+  helper.accessor("id", { header: "ID" }),
+  helper.accessor("nombreProducto", { header: "Nombre" }),
+  helper.accessor("nroLote", { header: "Lote" }),
+  helper.accessor("fecRegistro", {
+    header: "Fecha registro",
+    cell: ({ getValue }) => FECHA.format(new Date(getValue())),
+  }),
+  helper.accessor("costo", {
+    header: "Costo",
+    cell: ({ getValue }) => MONEDA.format(getValue()),
+  }),
+  helper.accessor("precioVenta", {
+    header: "Precio venta",
+    cell: ({ getValue }) => MONEDA.format(getValue()),
+  }),
+  helper.accessor("stockActual", {
+    header: "Stock",
+    cell: ({ getValue, row }) => (
+      <>
+        {getValue()}
+        <span className="text-muted-foreground"> / mín {row.original.stockMinimo}</span>
+      </>
+    ),
+  }),
+  helper.accessor("estado", {
+    header: "Estado",
+    cell: ({ getValue }) => (
+      <Badge variant={getValue() === "ACTIVO" ? "default" : "secondary"}>
+        {getValue()}
+      </Badge>
+    ),
+  }),
+  helper.display({
+    id: "acciones",
+    header: "Acciones",
+    cell: ({ row }) => (
+      <a
+        href={`${ROUTES.productos}/actualizar/${row.original.id}`}
+        className={buttonVariants({ variant: "outline", size: "sm" })}
+      >
+        Editar
+      </a>
+    ),
+  }),
+]);
 
 export default function ProductosListPage() {
   return (
@@ -91,61 +143,13 @@ function ProductosList() {
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
         </div>
-      ) : productos.length === 0 ? (
-        <Alert>
-          <AlertTitle>Sin productos</AlertTitle>
-          <AlertDescription>
-            No hay productos registrados todavía.
-          </AlertDescription>
-        </Alert>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Nombre</TableHead>
-              <TableHead>Lote</TableHead>
-              <TableHead>Costo</TableHead>
-              <TableHead>Precio venta</TableHead>
-              <TableHead>Stock</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead>Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {productos.map((p) => (
-              <TableRow key={p.id}>
-                <TableCell>{p.id}</TableCell>
-                <TableCell>{p.nombreProducto}</TableCell>
-                <TableCell>{p.nroLote}</TableCell>
-                <TableCell>{MONEDA.format(p.costo)}</TableCell>
-                <TableCell>{MONEDA.format(p.precioVenta)}</TableCell>
-                <TableCell>
-                  {p.stockActual}
-                  <span className="text-muted-foreground">
-                    {" "}
-                    / mín {p.stockMinimo}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={p.estado === "ACTIVO" ? "default" : "secondary"}
-                  >
-                    {p.estado}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <a
-                    href={`${ROUTES.productos}/actualizar/${p.id}`}
-                    className={buttonVariants({ variant: "outline", size: "sm" })}
-                  >
-                    Editar
-                  </a>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <DataTable
+          columns={columns}
+          data={productos}
+          searchPlaceholder="Buscar productos..."
+          emptyMessage="No hay productos registrados todavía."
+        />
       )}
     </div>
   );

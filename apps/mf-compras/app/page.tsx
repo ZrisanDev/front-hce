@@ -3,9 +3,10 @@
 /**
  * Compras — list page (F4-T4, REQ-COMPRA-02).
  *
- * GET /api/compras via apiClient.compras.list(). Columns: ID, Fecha, Items
- * (count), Total. loading/error/empty states. Cross-zone-safe nav with plain
- * <a> built from ROUTES.compras.
+ * GET /api/compras via apiClient.compras.list(). Rendered in the shared
+ * <DataTable> (sorting, global search, pagination, column visibility).
+ * loading/error states; the empty state is handled by the DataTable
+ * emptyMessage. Cross-zone-safe nav with plain <a> built from ROUTES.compras.
  *
  * apiClient.compras.list() returns Compra[] (cabecera + embedded detalles),
  * typed against @hce/shared since PASO 0 of PR5 corrected the shared types to
@@ -19,15 +20,12 @@ import {
   Alert,
   AlertDescription,
   AlertTitle,
+  DataTable,
   Skeleton,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
   buttonVariants,
+  createDataTableColumnHelper,
 } from "@hce/shared/ui";
+import { CompraDetailButton } from "../components/compra-detail-button";
 
 const MONEDA = new Intl.NumberFormat("es-PE", {
   minimumFractionDigits: 2,
@@ -37,6 +35,29 @@ const FECHA = new Intl.DateTimeFormat("es-PE", {
   dateStyle: "medium",
   timeStyle: "short",
 });
+
+const helper = createDataTableColumnHelper<Compra>();
+
+const columns = helper.columns([
+  helper.accessor("idCompraCab", { header: "ID" }),
+  helper.accessor("fecRegistro", {
+    header: "Fecha",
+    cell: ({ getValue }) => formatFecha(getValue()),
+  }),
+  helper.accessor("detalles", {
+    header: "Items",
+    cell: ({ getValue }) => getValue()?.length ?? 0,
+  }),
+  helper.accessor("total", {
+    header: "Total",
+    cell: ({ getValue }) => MONEDA.format(getValue()),
+  }),
+  helper.display({
+    id: "acciones",
+    header: "Acciones",
+    cell: ({ row }) => <CompraDetailButton compra={row.original} />,
+  }),
+]);
 
 export default function ComprasListPage() {
   return (
@@ -91,32 +112,13 @@ function ComprasList() {
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
         </div>
-      ) : compras.length === 0 ? (
-        <Alert>
-          <AlertTitle>Sin compras</AlertTitle>
-          <AlertDescription>No hay compras registradas todavía.</AlertDescription>
-        </Alert>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Fecha</TableHead>
-              <TableHead>Items</TableHead>
-              <TableHead>Total</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {compras.map((c) => (
-              <TableRow key={c.idCompraCab}>
-                <TableCell>{c.idCompraCab}</TableCell>
-                <TableCell>{formatFecha(c.fecRegistro)}</TableCell>
-                <TableCell>{c.detalles?.length ?? 0}</TableCell>
-                <TableCell>{MONEDA.format(c.total)}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <DataTable
+          columns={columns}
+          data={compras}
+          searchPlaceholder="Buscar compras..."
+          emptyMessage="No hay compras registradas todavía."
+        />
       )}
     </div>
   );
