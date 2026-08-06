@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import "./globals.css";
 import { AppLayout, AuthProvider, SessionExpiredProvider } from "@hce/shared";
 import { Toaster } from "@hce/shared/ui";
 
