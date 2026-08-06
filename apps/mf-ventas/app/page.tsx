@@ -1,8 +1,130 @@
-export default function Page() {
+"use client";
+
+/**
+ * Ventas — list page (F4-T6, REQ-VENTA-02).
+ *
+ * GET /api/ventas via apiClient.ventas.list() -> Venta[] (cabecera + embedded
+ * detalles, typed in @hce/shared since PASO 0 of PR5). Columns: ID, Fecha,
+ * Items (count), Total. loading/error/empty states. Cross-zone-safe nav with
+ * plain <a> built from ROUTES.ventas (next/link cannot soft-navigate between
+ * Multi-Zones).
+ *
+ * On 401 the apiClient fires TriggerSessionExpired and the zone-level modal
+ * (mounted in the layout) surfaces; we only render the ApiError.message here.
+ */
+
+import { useEffect, useState } from "react";
+import { ApiError, AuthGuard, ROUTES, apiClient } from "@hce/shared";
+import type { Venta } from "@hce/shared";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  Skeleton,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  buttonVariants,
+} from "@hce/shared/ui";
+
+const MONEDA = new Intl.NumberFormat("es-PE", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+const FECHA = new Intl.DateTimeFormat("es-PE", {
+  dateStyle: "medium",
+  timeStyle: "short",
+});
+
+export default function VentasListPage() {
   return (
-    <div style={{ padding: "2rem", fontFamily: "system-ui, sans-serif" }}>
-      <h1>Zona: Ventas</h1>
-      <p>Placeholder — la UI (listado y registro de ventas) se implementa en PR5.</p>
+    <AuthGuard>
+      <VentasList />
+    </AuthGuard>
+  );
+}
+
+function VentasList() {
+  const [ventas, setVentas] = useState<Venta[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiClient.ventas
+      .list()
+      .then((data) => {
+        if (cancelled) return;
+        setVentas(data ?? []);
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        setError(
+          err instanceof ApiError
+            ? err.message
+            : "No se pudo cargar el listado de ventas.",
+        );
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return (
+    <div className="mx-auto w-full max-w-6xl px-6 py-8">
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-semibold">Ventas</h1>
+        <a href={`${ROUTES.ventas}/registrar`} className={buttonVariants()}>
+          Registrar venta
+        </a>
+      </div>
+
+      {error ? (
+        <Alert variant="destructive">
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      ) : ventas === null ? (
+        <div className="flex flex-col gap-2" aria-busy="true">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      ) : ventas.length === 0 ? (
+        <Alert>
+          <AlertTitle>Sin ventas</AlertTitle>
+          <AlertDescription>No hay ventas registradas todavía.</AlertDescription>
+        </Alert>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>ID</TableHead>
+              <TableHead>Fecha</TableHead>
+              <TableHead>Items</TableHead>
+              <TableHead>Total</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {ventas.map((v) => (
+              <TableRow key={v.idVentaCab}>
+                <TableCell>{v.idVentaCab}</TableCell>
+                <TableCell>{formatFecha(v.fecRegistro)}</TableCell>
+                <TableCell>{v.detalles?.length ?? 0}</TableCell>
+                <TableCell>{MONEDA.format(v.total)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
     </div>
   );
+}
+
+/** fecRegistro may arrive as an ISO string or a Date-serialized string. */
+function formatFecha(value: string): string {
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? value : FECHA.format(d);
 }
