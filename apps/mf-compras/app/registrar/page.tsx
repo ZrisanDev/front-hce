@@ -9,7 +9,9 @@
  * apiClient.compras.create. Subtotal/total are computed in the UI as an
  * informational hint (the backend recalculates).
  *
- * NO emitInventoryChange here — that cross-zone event is PR6 / Fase 5.
+ * Cross-zone eventing (Fase 5): on a successful create the page dispatches
+ * emitInventoryChange({ origin: "compra" }) so other zones/tabs displaying
+ * derived data (e.g. mf-kardex) can refresh. This fires before the redirect.
  *
  * Nav is cross-zone-safe: plain <a> built from ROUTES.compras. On success: a
  * sonner toast + window.location redirect to the compras list; on failure: the
@@ -21,7 +23,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useFieldArray, useForm, type ControllerRenderProps } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { ApiError, AuthGuard, ROUTES, apiClient } from "@hce/shared";
+import { ApiError, AuthGuard, ROUTES, apiClient, emitInventoryChange } from "@hce/shared";
 import type { Producto } from "@hce/shared";
 import {
   Alert,
@@ -112,6 +114,8 @@ function RegistrarCompra() {
     setSubmitError(null);
     try {
       await apiClient.compras.create({ items: values.items });
+      // Notify other zones/tabs (e.g. mf-kardex) that inventory changed.
+      emitInventoryChange({ origin: "compra" });
       toast.success("Compra registrada");
       window.location.href = ROUTES.compras;
     } catch (err: unknown) {

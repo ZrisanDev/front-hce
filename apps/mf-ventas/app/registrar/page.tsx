@@ -12,8 +12,10 @@
  * informational hint (the backend recalculates).
  *
  * The front does NOT validate stock (locked decision): backend rejects and we
- * surface its ApiError.message. NO emitInventoryChange here — that cross-zone
- * event is PR6 / Fase 5.
+ * surface its ApiError.message. Cross-zone eventing (Fase 5): on a successful
+ * create the page dispatches emitInventoryChange({ origin: "venta" }) so other
+ * zones/tabs displaying derived data (e.g. mf-kardex) can refresh. This fires
+ * before the redirect.
  *
  * Nav is cross-zone-safe: plain <a> built from ROUTES.ventas. On success: a
  * sonner toast + window.location redirect to the ventas list.
@@ -29,7 +31,7 @@ import {
 } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { ApiError, AuthGuard, ROUTES, apiClient } from "@hce/shared";
+import { ApiError, AuthGuard, ROUTES, apiClient, emitInventoryChange } from "@hce/shared";
 import type { Producto } from "@hce/shared";
 import {
   Alert,
@@ -124,6 +126,8 @@ function RegistrarVenta() {
     setSubmitError(null);
     try {
       await apiClient.ventas.create({ items: values.items });
+      // Notify other zones/tabs (e.g. mf-kardex) that inventory changed.
+      emitInventoryChange({ origin: "venta" });
       toast.success("Venta registrada");
       window.location.href = ROUTES.ventas;
     } catch (err: unknown) {
