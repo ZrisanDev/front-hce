@@ -59,3 +59,5 @@ export {
   useAuth,
 } from "./auth";
 export type { AuthContextValue, LoginFn, LogoutFn } from "./auth";
+
+export { AppSidebar, NavUser } from "./layout";
