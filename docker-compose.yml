@@ -17,13 +17,13 @@
 # gateway alone cannot run (it proxies auth/inventario which need the DB). So
 # the backend is intentionally NOT a built service here. Two ways to wire it:
 #
-#   EASY (backend on the host): start back-hce's gateway on :5050 on your host
+#   EASY (backend on the host): start back-hce's gateway on :8080 on your host
 #     (its normal dev port), then point the frontend at it from the container:
-#       BACKEND_URL=http://host.docker.internal:5050
+#       BACKEND_URL=http://host.docker.internal:8080
 #     `extra_hosts` below enables host.docker.internal on Linux out of the box.
 #
 #   DOCKER-NATIVE (shared network): bring back-hce up on this network with a
-#     `backend` network alias, then the default BACKEND_URL=http://backend:5050
+#     `backend` network alias, then the default BACKEND_URL=http://backend:8080
 #     resolves. A commented `backend` service sketch is at the bottom.
 # -----------------------------------------------------------------------------
 
@@ -40,7 +40,7 @@ services:
     environment:
       PORT: "3000"
       # Same-origin API proxy target (server-side only).
-      BACKEND_URL: http://backend:5050
+      BACKEND_URL: http://backend:8080
       # Per-zone upstreams for Multi-Zones rewrites (server-side only).
       API_ZONA_PRODUCTOS: http://mf-productos:3001
       API_ZONA_COMPRAS: http://mf-compras:3002
@@ -56,7 +56,7 @@ services:
       - hce-frontend
     extra_hosts:
       # Lets the container reach a backend running on the host via
-      # http://host.docker.internal:5050 (Linux needs this explicit mapping).
+      # http://host.docker.internal:8080 (Linux needs this explicit mapping).
       - "host.docker.internal:host-gateway"
 
   mf-productos:
@@ -70,7 +70,7 @@ services:
       - "3001:3001"
     environment:
       PORT: "3001"
-      BACKEND_URL: http://backend:5050
+      BACKEND_URL: http://backend:8080
     restart: unless-stopped
     networks:
       - hce-frontend
@@ -88,7 +88,7 @@ services:
       - "3002:3002"
     environment:
       PORT: "3002"
-      BACKEND_URL: http://backend:5050
+      BACKEND_URL: http://backend:8080
     restart: unless-stopped
     networks:
       - hce-frontend
@@ -106,7 +106,7 @@ services:
       - "3003:3003"
     environment:
       PORT: "3003"
-      BACKEND_URL: http://backend:5050
+      BACKEND_URL: http://backend:8080
     restart: unless-stopped
     networks:
       - hce-frontend
@@ -124,7 +124,7 @@ services:
       - "3004:3004"
     environment:
       PORT: "3004"
-      BACKEND_URL: http://backend:5050
+      BACKEND_URL: http://backend:8080
     restart: unless-stopped
     networks:
       - hce-frontend
@@ -136,7 +136,7 @@ services:
   # full stack (db + auth + inventario + gateway) lives in back-hce's own
   # docker-compose.yml. Prefer bringing that up directly. Uncomment + adjust only
   # if you wire the whole backend stack onto the `hce-frontend` network with a
-  # `backend` alias so BACKEND_URL=http://backend:5050 resolves.
+  # `backend` alias so BACKEND_URL=http://backend:8080 resolves.
   # ---------------------------------------------------------------------------
   # backend:
   #   build:
@@ -144,11 +144,11 @@ services:
   #     dockerfile: apps/gateway/Dockerfile
   #   container_name: hce-backend
   #   environment:
-  #     PORT: "5050"
+  #     PORT: "8080"
   #     SERVICE_AUTH_URL: http://auth:3001
   #     SERVICE_INVENTARIO_URL: http://inventario:3002
   #   ports:
-  #     - "5050:5050"
+  #     - "8080:8080"
   #   networks:
   #     hce-frontend:
   #       aliases:

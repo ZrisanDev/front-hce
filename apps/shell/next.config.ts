@@ -13,7 +13,7 @@ import path from "node:path";
  *
  * Zone upstreams are overridable via API_ZONA_<NAME> for docker-compose.
  */
-const BACKEND = process.env.BACKEND_URL ?? "http://localhost:5050";
+const BACKEND = process.env.BACKEND_URL ?? "http://localhost:8080";
 const zone = (port: number, name: string) =>
   process.env[`API_ZONA_${name}`] ?? `http://localhost:${port}`;
 

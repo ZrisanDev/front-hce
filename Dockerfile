@@ -17,7 +17,7 @@
 # PORT/HOSTNAME from the environment.
 #
 # Runtime env (all server-side only — never NEXT_PUBLIC_*):
-#   BACKEND_URL            gateway base URL, e.g. http://backend:5050
+#   BACKEND_URL            gateway base URL, e.g. http://backend:8080
 #   API_ZONA_PRODUCTOS..   per-zone upstreams (shell only), e.g. http://mf-productos:3001
 #   PORT, HOSTNAME         standalone server bind (defaults below)
 

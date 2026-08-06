@@ -13,7 +13,7 @@ import path from "node:path";
  * When the zone is reached through the shell, the browser's origin is the shell
  * and `/api/...` is handled by the shell's rewrite instead.
  */
-const BACKEND = process.env.BACKEND_URL ?? "http://localhost:5050";
+const BACKEND = process.env.BACKEND_URL ?? "http://localhost:8080";
 
 const nextConfig: NextConfig = {
   basePath: "/productos",

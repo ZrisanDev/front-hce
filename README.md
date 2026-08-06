@@ -33,7 +33,7 @@ events, UI kit) and proxy `/api/*` to the same backend.
       │              │              │              │
       └──────────┬───┴──────────────┴──────────────┘
                  ▼  /api/*  (same-origin proxy, credentials:include)
-            back-hce gateway (:5050)   ← HttpOnly JWT cookie
+            back-hce gateway (:8080)   ← HttpOnly JWT cookie
 
    @hce/shared (packages/shared) — types · apiClient · auth · events · UI kit
    cross-zone event bus: emitInventoryChange() (compras/ventas) → onInventoryChange() (kardex)
@@ -85,7 +85,7 @@ front-hce/
 
 ## Run in development
 
-Prerequisite: the **back-hce** gateway running on `http://localhost:5050` (see
+Prerequisite: the **back-hce** gateway running on `http://localhost:8080` (see
 its own README / `docker-compose.yml`).
 
 ```bash
@@ -120,11 +120,11 @@ The backend is **not** built here. back-hce is a separate microservice stack
 single root Dockerfile, so it must be brought up independently. Two options,
 documented in `docker-compose.yml`:
 
-- **Backend on the host** (easy): run back-hce's gateway on `:5050`, then set
-  `BACKEND_URL=http://host.docker.internal:5050` in the service env
+- **Backend on the host** (easy): run back-hce's gateway on `:8080`, then set
+  `BACKEND_URL=http://host.docker.internal:8080` in the service env
   (`extra_hosts` already enables `host.docker.internal` on Linux).
 - **Shared network**: join back-hce's gateway to the `hce-frontend` network with
-  a `backend` alias so the default `BACKEND_URL=http://backend:5050` resolves.
+  a `backend` alias so the default `BACKEND_URL=http://backend:8080` resolves.
 
 ---
 
@@ -136,7 +136,7 @@ each app's `next.config.ts` rewrites.
 
 | Variable | Used by | Purpose |
 |----------|---------|---------|
-| `BACKEND_URL` | all apps | Same-origin `/api/*` proxy target (default `http://localhost:5050`) |
+| `BACKEND_URL` | all apps | Same-origin `/api/*` proxy target (default `http://localhost:8080`) |
 | `API_ZONA_PRODUCTOS` | shell | mf-productos upstream (default `http://localhost:3001`) |
 | `API_ZONA_COMPRAS` | shell | mf-compras upstream (default `http://localhost:3002`) |
 | `API_ZONA_VENTAS` | shell | mf-ventas upstream (default `http://localhost:3003`) |
