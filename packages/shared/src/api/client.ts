@@ -12,8 +12,7 @@
  * travels with every request.
  */
 
-import { TriggerSessionExpired } from "../auth/session";
-import { tryRefresh } from "../auth/refresh";
+import { apiClientInstance } from "./axios-instance";
 import type {
   ActualizarProductoDto,
   Compra,
@@ -58,69 +57,26 @@ type ReqOpts = {
 /**
  * Low-level request helper. Throws `ApiError` on non-2xx.
  *
- * 401 recovery is refresh-first: when an access token expires, we attempt ONE
- * `POST /api/auth/refresh` (deduped across concurrent 401s via `tryRefresh`)
- * and, on success, transparently retry the original request with the rotated
- * cookie. Only when the refresh itself fails (refresh token invalid/expired/
- * revoked, or a network error) do we fire `TriggerSessionExpired` so the
- * blocking modal appears. Calls that opt out via `skipAuthRefresh` (login,
- * logout) bypass recovery entirely: their 401 is a hard failure, not an
- * expired session.
- *
- * The `retried` guard ensures we retry at most once — a 401 after a successful
- * refresh, or a 401 on a retry, is terminal and never triggers another refresh
- * (preventing infinite loops).
- *
- * Responses with an empty body resolve to `undefined`; the caller types the
+ * Thin adapter over the configured axios instance (`axios-instance.ts`); all
+ * HTTP behavior lives there: `withCredentials`, JSON headers, 401
+ * refresh-first-ONCE recovery, the `skipAuthRefresh` opt-out, 204/empty body
+ * -> `undefined`, and `ApiError(status, message, details)` on non-2xx. The
+ * one-shot retry guard is carried on the axios config (decision D4), so the
+ * `retried` parameter is gone from this signature. The caller types the
  * expected payload via `T`.
  */
 export async function req<T>(
   path: string,
   opts: ReqOpts = {},
-  retried = false,
 ): Promise<T> {
-  const res = await fetch(path, {
+  const data = await apiClientInstance.request({
+    url: path,
     method: opts.method ?? "GET",
-    credentials: "include",
-    headers: opts.body ? { "Content-Type": "application/json" } : undefined,
-    body: opts.body ? JSON.stringify(opts.body) : undefined,
+    data: opts.body,
     signal: opts.signal,
+    skipAuthRefresh: opts.skipAuthRefresh,
   });
-
-  // 401 → refresh-first, but only once and only when not opted out.
-  if (res.status === 401 && !retried && !opts.skipAuthRefresh) {
-    const refreshed = await tryRefresh();
-    if (refreshed) {
-      return req<T>(path, opts, true); // retry once with the new cookie
-    }
-    // Refresh failed → the session is genuinely expired.
-    TriggerSessionExpired("apiClient");
-    throw new ApiError(401, "Sesión expirada");
-  }
-
-  // 401 after a retry, or 401 on an opt-out call (login/logout). No recovery.
-  if (res.status === 401) {
-    if (!opts.skipAuthRefresh) TriggerSessionExpired("apiClient");
-    throw new ApiError(
-      401,
-      opts.skipAuthRefresh ? "Credenciales inválidas" : "Sesión expirada",
-    );
-  }
-
-  if (!res.ok) {
-    const body = (await res.json().catch(() => ({}))) as {
-      message?: string;
-      details?: unknown;
-    };
-    throw new ApiError(
-      res.status,
-      body.message ?? `Error ${res.status}`,
-      body.details,
-    );
-  }
-
-  // 204 No Content or empty body -> resolve to undefined.
-  return res.json().catch(() => undefined as unknown as T) as Promise<T>;
+  return data as T;
 }
 
 /**
