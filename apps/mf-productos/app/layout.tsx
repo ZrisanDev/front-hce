@@ -1,6 +1,10 @@
 import type { ReactNode } from "react";
 import "./globals.css";
-import { AppLayout, AuthProvider, SessionExpiredProvider } from "@hce/shared";
+import { Geist, Geist_Mono } from "next/font/google";
+
+const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
+const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+import { AppLayout, AuthProvider, ModalProvider, SessionExpiredProvider, ThemeProvider } from "@hce/shared";
 import { Toaster } from "@hce/shared/ui";
 
 export const metadata = {
@@ -10,8 +14,8 @@ export const metadata = {
 
 export default function Layout({ children }: { children: ReactNode }) {
   return (
-    <html lang="es">
-      <body>
+    <html lang="es" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+      <body className="min-h-full">
         {/*
          * Each zone is a separate Next app with its own React tree, so it mounts
          * its own AuthProvider + SessionExpiredProvider. The session singleton
@@ -21,12 +25,21 @@ export default function Layout({ children }: { children: ReactNode }) {
          * <Toaster> mounts the sonner viewport so toast() calls from the zone's
          * forms (registrar/actualizar) actually render.
          */}
-        <AuthProvider>
-          <SessionExpiredProvider>
-            <AppLayout zone="Productos">{children}</AppLayout>
-          </SessionExpiredProvider>
-        </AuthProvider>
-        <Toaster />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <ModalProvider>
+            <AuthProvider>
+              <SessionExpiredProvider>
+                <AppLayout zone="Productos">{children}</AppLayout>
+              </SessionExpiredProvider>
+            </AuthProvider>
+          </ModalProvider>
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );

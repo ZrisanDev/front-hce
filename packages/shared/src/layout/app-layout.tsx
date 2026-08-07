@@ -1,10 +1,7 @@
 import type { ReactNode } from "react";
 import { TooltipProvider } from "../ui/tooltip";
-import {
-  SidebarProvider,
-  SidebarInset,
-  SidebarTrigger,
-} from "../ui/sidebar";
+import { SidebarInset, SidebarTrigger } from "../ui/sidebar";
+import { AppSidebarProvider } from "./sidebar-provider";
 import { Separator } from "../ui/separator";
 import {
   Breadcrumb,
@@ -13,6 +10,7 @@ import {
   BreadcrumbPage,
 } from "../ui/breadcrumb";
 import { AppSidebar } from "./app-sidebar";
+import { ModeToggle } from "../ui";
 
 /**
  * Shared application chrome for every Multi-Zone app (shell + 4 zones).
@@ -43,7 +41,7 @@ export function AppLayout({
 }) {
   return (
     <TooltipProvider>
-      <SidebarProvider>
+      <AppSidebarProvider>
         <AppSidebar />
         <SidebarInset>
           <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -61,10 +59,13 @@ export function AppLayout({
                 </BreadcrumbList>
               </Breadcrumb>
             )}
+            <div className="ml-auto">
+              <ModeToggle />
+            </div>
           </header>
           <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
         </SidebarInset>
-      </SidebarProvider>
+      </AppSidebarProvider>
     </TooltipProvider>
   );
 }

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import "./globals.css";
-import { AppLayout, AuthProvider, SessionExpiredProvider } from "@hce/shared";
+import { AppLayout, AuthProvider, ModalProvider, SessionExpiredProvider, ThemeProvider } from "@hce/shared";
 import { Toaster } from "@hce/shared/ui";
 
 export const metadata = {
@@ -10,7 +10,7 @@ export const metadata = {
 
 export default function Layout({ children }: { children: ReactNode }) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
       <body>
         {/*
          * Each zone is a separate Next app with its own React tree, so it mounts
@@ -21,12 +21,21 @@ export default function Layout({ children }: { children: ReactNode }) {
          * <Toaster> mounts the sonner viewport so toast() calls from the
          * registrar form (with dynamic items) actually render.
          */}
-        <AuthProvider>
-          <SessionExpiredProvider>
-            <AppLayout zone="Ventas">{children}</AppLayout>
-          </SessionExpiredProvider>
-        </AuthProvider>
-        <Toaster />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <ModalProvider>
+            <AuthProvider>
+              <SessionExpiredProvider>
+                <AppLayout zone="Ventas">{children}</AppLayout>
+              </SessionExpiredProvider>
+            </AuthProvider>
+          </ModalProvider>
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );

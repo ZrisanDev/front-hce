@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import "./globals.css";
-import { AppLayout, AuthProvider, SessionExpiredProvider } from "@hce/shared";
+import { AppLayout, AuthProvider, ModalProvider, SessionExpiredProvider, ThemeProvider } from "@hce/shared";
 
 export const metadata = {
   title: "Kardex · HCE",
@@ -9,7 +9,7 @@ export const metadata = {
 
 export default function Layout({ children }: { children: ReactNode }) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
       <body>
         {/*
          * Each zone is a separate Next app with its own React tree, so it mounts
@@ -17,11 +17,20 @@ export default function Layout({ children }: { children: ReactNode }) {
          * in @hce/shared is shared module state, so a 401 raised by this zone's
          * apiClient call surfaces the modal here.
          */}
-        <AuthProvider>
-          <SessionExpiredProvider>
-            <AppLayout zone="Kardex">{children}</AppLayout>
-          </SessionExpiredProvider>
-        </AuthProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <ModalProvider>
+            <AuthProvider>
+              <SessionExpiredProvider>
+                <AppLayout zone="Kardex">{children}</AppLayout>
+              </SessionExpiredProvider>
+            </AuthProvider>
+          </ModalProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

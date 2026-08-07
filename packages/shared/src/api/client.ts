@@ -18,6 +18,7 @@ import type {
   ActualizarProductoDto,
   Compra,
   DocDto,
+  DocVentaDto,
   KardexFilters,
   MovimientoKardex,
   Producto,
@@ -181,7 +182,7 @@ export const apiClient = {
 
   ventas: {
     list: () => req<Venta[]>("/api/ventas"),
-    create: (data: DocDto) =>
+    create: (data: DocVentaDto) =>
       req<void>("/api/ventas", { method: "POST", body: data }),
   },
 

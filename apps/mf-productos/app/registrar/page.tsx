@@ -36,7 +36,6 @@ const schema = z.object({
   nroLote: z.string().min(1, "El lote es obligatorio"),
   costo: z.coerce.number().nonnegative("El costo debe ser ≥ 0"),
   precioVenta: z.coerce.number().nonnegative("El precio debe ser ≥ 0"),
-  stockMinimo: z.coerce.number().int().nonnegative("El stock mínimo debe ser ≥ 0"),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -63,7 +62,6 @@ function RegistrarProducto() {
       nroLote: "",
       costo: 0,
       precioVenta: 0,
-      stockMinimo: 0,
     },
   });
 
@@ -116,7 +114,7 @@ function RegistrarProducto() {
           ) : null}
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-2">
             <Label htmlFor="costo">Costo</Label>
             <Input id="costo" type="number" step="0.01" min="0" {...register("costo")} />
@@ -136,21 +134,6 @@ function RegistrarProducto() {
             {errors.precioVenta ? (
               <p className="text-sm text-destructive">
                 {errors.precioVenta.message}
-              </p>
-            ) : null}
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="stockMinimo">Stock mínimo</Label>
-            <Input
-              id="stockMinimo"
-              type="number"
-              step="1"
-              min="0"
-              {...register("stockMinimo")}
-            />
-            {errors.stockMinimo ? (
-              <p className="text-sm text-destructive">
-                {errors.stockMinimo.message}
               </p>
             ) : null}
           </div>

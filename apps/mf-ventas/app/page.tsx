@@ -89,8 +89,7 @@ function VentasList() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-8">
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold">Ventas</h1>
+      <div className="mb-6 flex items-center justify-end gap-4">
         <a href={`${ROUTES.ventas}/registrar`} className={buttonVariants()}>
           Registrar venta
         </a>

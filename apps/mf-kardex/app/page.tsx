@@ -1,37 +1,47 @@
 "use client";
 
 /**
- * Kardex — filterable list page (F4-T8, REQ-KARDEX-01).
+ * Kardex — per-product Kardex page (REQ-KARDEX-01, exam requirement 1.2.3).
  *
- * GET /api/kardex via apiClient.kardex.list(filters) where filters is a
- * KardexFilters built from the filter bar (producto / fecha inicio+fin / tipo
- * de movimiento). Results render in the shared <DataTable> (sorting, global
- * search, pagination, column visibility) with columns: ID Movimiento, Fecha,
- * Tipo (Badge ENTRADA/SALIDA), Origen (COMPRA/VENTA), Producto, Cantidad.
- * States: loading (Skeleton), error (Alert), and an explicit empty state "Sin
- * resultados para los filtros aplicados" (REQ-KARDEX-01). "Limpiar filtros"
- * resets the bar.
+ * The exam asks for a PRODUCTS table showing id_producto, nombre_producto,
+ * stock_actual, costo, precio_venta, PLUS a per-row button that opens a modal
+ * listing the product's movements (Fecha registro | Tipo Movimiento | Cantidad
+ * — compra/venta). This view replaces the previous flat movement list.
+ *
+ * Data sources loaded in parallel on mount:
+ *   - apiClient.productos.list() → catalog (id / nombre / lote / costo /
+ *     precioVenta)
+ *   - apiClient.kardex.list(filters) → MovimientoKardex[] used both for the
+ *     "Ver movimientos" modal and to DERIVE stock_actual per product:
+ *       stockMap[id] = Σ (ENTRADA ? +cantidad : -cantidad)
+ *     We deliberately do NOT read producto.stockActual: post-Fix-02
+ *     sp_venta_registrar no longer maintains producto.stock_actual, so that
+ *     column would be stale. The movement aggregation is the only correct
+ *     source of truth ("basarte en la tabla movimiento").
+ *
+ * Filters: the existing filter bar (producto / fecha inicio+fin / tipo) scopes
+ * the kardex load. The product table always renders the full catalog; the
+ * derived stock and the modal reflect ONLY the movements matching the active
+ * filters. With no filters, that means the true current stock. With a date
+ * range, the stock column reads as the net movement within that window — a
+ * reasonable behavior for a filterable kardex.
+ *
+ * Cross-zone eventing (Fase 5): the page subscribes to onInventoryChange so a
+ * compra/venta registered in another zone/tab re-fetches the kardex with the
+ * current filters; the subscription is cleaned up on unmount.
  *
  * Filters are plain controlled state (no react-hook-form): they're simple
- * selects/inputs and rhf would be overkill. Cross-zone eventing (Fase 5): the
- * page subscribes to onInventoryChange so that when a compra/venta is
- * registered in another zone/tab it re-fetches the kardex with the currently
- * applied filters; the subscription is cleaned up on unmount.
- *
- * The producto Select is populated from GET /api/productos. The tipo Select
- * maps Entrada/Salida to idTipoMovimiento 1/2 (undefined = Todos). Sentinels
- * "__all__" keep base-ui Select values non-empty (it treats "" as the
- * placeholder sentinel).
+ * selects/inputs and rhf would be overkill. Sentinels "__all__" keep base-ui
+ * Select values non-empty (it treats "" as the placeholder sentinel).
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ApiError, AuthGuard, apiClient, onInventoryChange } from "@hce/shared";
 import type { KardexFilters, MovimientoKardex, Producto } from "@hce/shared";
 import {
   Alert,
   AlertDescription,
   AlertTitle,
-  Badge,
   Button,
   DataTable,
   Input,
@@ -44,35 +54,17 @@ import {
   Skeleton,
   createDataTableColumnHelper,
 } from "@hce/shared/ui";
+import { VerMovimientosButton } from "../components/movimientos-producto-modal";
 
-const FECHA = new Intl.DateTimeFormat("es-PE", {
-  dateStyle: "medium",
-  timeStyle: "short",
+const MONEDA = new Intl.NumberFormat("es-PE", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
 });
 
 /** Sentinel meaning "no filter" for base-ui Select values. */
 const ALL = "__all__";
 
-const helper = createDataTableColumnHelper<MovimientoKardex>();
-
-const columns = helper.columns([
-  helper.accessor("idMovimientoCab", { header: "ID Movimiento" }),
-  helper.accessor("fecRegistro", {
-    header: "Fecha",
-    cell: ({ getValue }) => formatFecha(getValue()),
-  }),
-  helper.accessor("tipoMovimiento", {
-    header: "Tipo",
-    cell: ({ getValue }) => (
-      <Badge variant={getValue() === "ENTRADA" ? "default" : "secondary"}>
-        {getValue()}
-      </Badge>
-    ),
-  }),
-  helper.accessor("tipoDocumentoOrigen", { header: "Origen" }),
-  helper.accessor("nombreProducto", { header: "Producto" }),
-  helper.accessor("cantidad", { header: "Cantidad" }),
-]);
+const helper = createDataTableColumnHelper<Producto>();
 
 export default function KardexPage() {
   return (
@@ -93,6 +85,61 @@ function KardexList() {
   const [fInicio, setFInicio] = useState<string>("");
   const [fFin, setFFin] = useState<string>("");
   const [fTipo, setFTipo] = useState<string>(ALL);
+
+  /**
+   * stockMap: derived stock_actual per product from the (filtered) movements.
+   * ENTRADA adds cantidad, SALIDA subtracts it. We do NOT read
+   * producto.stockActual — post-Fix-02 that column is stale for sales.
+   * movimientosPorProducto: pre-grouped movements so the per-row modal button
+   * never re-filters on each open; both maps recompute when `movimientos`
+   * changes (i.e. on every kardex load with new filters).
+   */
+  const { stockMap, movimientosPorProducto } = useMemo(() => {
+    const stocks = new Map<number, number>();
+    const porProducto = new Map<number, MovimientoKardex[]>();
+    if (movimientos) {
+      for (const m of movimientos) {
+        const delta = m.tipoMovimiento === "ENTRADA" ? m.cantidad : -m.cantidad;
+        stocks.set(m.idProducto, (stocks.get(m.idProducto) ?? 0) + delta);
+        const bucket = porProducto.get(m.idProducto);
+        if (bucket) bucket.push(m);
+        else porProducto.set(m.idProducto, [m]);
+      }
+    }
+    return { stockMap: stocks, movimientosPorProducto: porProducto };
+  }, [movimientos]);
+
+  const columns = useMemo(
+    () =>
+      helper.columns([
+        helper.accessor("id", { header: "ID" }),
+        helper.accessor("nombreProducto", { header: "Producto" }),
+        helper.display({
+          id: "stock",
+          header: "Stock actual",
+          cell: ({ row }) => stockMap.get(row.original.id) ?? 0,
+        }),
+        helper.accessor("costo", {
+          header: "Costo",
+          cell: ({ getValue }) => MONEDA.format(getValue<number>()),
+        }),
+        helper.accessor("precioVenta", {
+          header: "Precio venta",
+          cell: ({ getValue }) => MONEDA.format(getValue<number>()),
+        }),
+        helper.display({
+          id: "acciones",
+          header: "Movimientos",
+          cell: ({ row }) => (
+            <VerMovimientosButton
+              producto={row.original}
+              movimientos={movimientosPorProducto.get(row.original.id) ?? []}
+            />
+          ),
+        }),
+      ]),
+    [stockMap, movimientosPorProducto],
+  );
 
   const buildFilters = useCallback(
     (producto: string, inicio: string, fin: string, tipo: string): KardexFilters => {
@@ -184,8 +231,6 @@ function KardexList() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-8">
-      <h1 className="mb-6 text-2xl font-semibold">Kardex</h1>
-
       {/* Filter bar */}
       <div className="mb-6 grid grid-cols-1 gap-3 rounded-lg border border-border p-4 sm:grid-cols-2 lg:grid-cols-4 lg:items-end">
         <div className="flex flex-col gap-2">
@@ -269,17 +314,11 @@ function KardexList() {
       ) : (
         <DataTable
           columns={columns}
-          data={movimientos}
-          searchPlaceholder="Buscar en kardex..."
-          emptyMessage="Sin resultados para los filtros aplicados."
+          data={productos}
+          searchPlaceholder="Buscar producto..."
+          emptyMessage="Sin productos para los filtros aplicados."
         />
       )}
     </div>
   );
-}
-
-/** fecRegistro may arrive as an ISO string or a Date-serialized string. */
-function formatFecha(value: string): string {
-  const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? value : FECHA.format(d);
 }

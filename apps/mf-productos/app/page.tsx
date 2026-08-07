@@ -61,12 +61,7 @@ const columns = helper.columns([
   }),
   helper.accessor("stockActual", {
     header: "Stock",
-    cell: ({ getValue, row }) => (
-      <>
-        {getValue()}
-        <span className="text-muted-foreground"> / mín {row.original.stockMinimo}</span>
-      </>
-    ),
+    cell: ({ getValue }) => MONEDA.format(getValue()),
   }),
   helper.accessor("estado", {
     header: "Estado",
@@ -124,8 +119,7 @@ function ProductosList() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-8">
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold">Productos</h1>
+      <div className="mb-6 flex items-center justify-end gap-4">
         <a href={`${ROUTES.productos}/registrar`} className={buttonVariants()}>
           Registrar producto
         </a>

@@ -22,7 +22,6 @@ export interface Producto {
   costo: number;
   precioVenta: number;
   stockActual: number;
-  stockMinimo: number;
   estado: EstadoProducto;
 }
 
@@ -32,7 +31,6 @@ export interface RegistrarProductoDto {
   nroLote: string;
   costo: number;
   precioVenta: number;
-  stockMinimo: number;
 }
 
 /** Payload for PATCH /api/productos/:id. All fields optional. */
@@ -46,12 +44,24 @@ export interface ItemDto {
 }
 
 /**
- * Shared document body for registrar-compra and registrar-venta.
- * Maps to RegistrarCompraDto / RegistrarVentaDto on the backend, which share
- * the same `{ items: ItemDto[] }` shape.
+ * Shared document body for registrar-compra. Maps to
+ * RegistrarCompraDto on the backend, which shares the same
+ * `{ items: ItemDto[] }` shape.
  */
 export interface DocDto {
   items: ItemDto[];
+}
+
+/** A single sale line. Unlike a purchase, the user does NOT enter a price;
+ *  the backend takes it from producto.precio_venta. */
+export interface ItemVentaDto {
+  idProducto: number;
+  cantidad: number;
+}
+
+/** Payload for POST /api/ventas. */
+export interface DocVentaDto {
+  items: ItemVentaDto[];
 }
 
 /**

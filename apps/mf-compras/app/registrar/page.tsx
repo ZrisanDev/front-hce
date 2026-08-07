@@ -9,6 +9,12 @@
  * apiClient.compras.create. Subtotal/total are computed in the UI as an
  * informational hint (the backend recalculates).
  *
+ * Inline "registrar producto" (Fix 04, REQ 1.2.1): when a product is not in
+ * the catalog, a per-row button opens the shared global modal
+ * (RegistrarProductoButton) to create one. On success the catalog is refreshed
+ * and the new product is auto-selected in the originating row via setValue,
+ * preserving the rest of the useFieldArray state.
+ *
  * Cross-zone eventing (Fase 5): on a successful create the page dispatches
  * emitInventoryChange({ origin: "compra" }) so other zones/tabs displaying
  * derived data (e.g. mf-kardex) can refresh. This fires before the redirect.
@@ -41,6 +47,7 @@ import {
   buttonVariants,
 } from "@hce/shared/ui";
 import { Controller } from "react-hook-form";
+import { RegistrarProductoButton } from "../../components/registrar-producto-modal";
 
 const itemSchema = z.object({
   idProducto: z.coerce.number().int().positive("Seleccione un producto"),
@@ -73,7 +80,7 @@ function RegistrarCompra() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const { control, register, handleSubmit, watch, formState: { errors, isSubmitting } } =
+  const { control, register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } =
     useForm<FormValues>({
       resolver: zodResolver(formSchema),
       defaultValues: {
@@ -109,6 +116,14 @@ function RegistrarCompra() {
     (sum, it) => sum + (Number(it.cantidad) || 0) * (Number(it.precio) || 0),
     0,
   );
+
+  /** Catalog refresh + auto-select of a newly registered product (Fix 04). */
+  function handleProductoCreado(index: number, producto: Producto) {
+    setProductos((prev) => (prev ? [producto, ...prev] : [producto]));
+    setValue(`items.${index}.idProducto`, producto.id, {
+      shouldValidate: true,
+    });
+  }
 
   async function onSubmit(values: FormValues) {
     setSubmitError(null);
@@ -194,6 +209,9 @@ function RegistrarCompra() {
                     {itemError.idProducto.message}
                   </p>
                 ) : null}
+                <RegistrarProductoButton
+                  onCreated={(p) => handleProductoCreado(index, p)}
+                />
               </div>
 
               <div className="flex flex-col gap-2">

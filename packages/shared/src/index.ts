@@ -23,8 +23,10 @@ export type {
   Compra,
   CompraDet,
   DocDto,
+  DocVentaDto,
   EstadoProducto,
   ItemDto,
+  ItemVentaDto,
   KardexFilters,
   MovimientoKardex,
   Producto,
@@ -61,3 +63,8 @@ export {
 export type { AuthContextValue, LoginFn, LogoutFn } from "./auth";
 
 export { AppSidebar, NavUser, AppLayout } from "./layout";
+
+export { ThemeProvider } from "./theme";
+
+export { ModalProvider, useModal } from "./ui/modal-provider";
+export type { ModalOptions } from "./ui/modal-provider";

@@ -94,8 +94,7 @@ function ComprasList() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-8">
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold">Compras</h1>
+      <div className="mb-6 flex items-center justify-end gap-4">
         <a href={`${ROUTES.compras}/registrar`} className={buttonVariants()}>
           Registrar compra
         </a>

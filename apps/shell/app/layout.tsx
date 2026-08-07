@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { AppLayout, AuthProvider, SessionExpiredProvider } from "@hce/shared";
+import { AppLayout, AuthProvider, ModalProvider, SessionExpiredProvider, ThemeProvider } from "@hce/shared";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,14 +23,24 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="es"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full">
-        <AuthProvider>
-          <SessionExpiredProvider>
-            <AppLayout>{children}</AppLayout>
-          </SessionExpiredProvider>
-        </AuthProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <ModalProvider>
+            <AuthProvider>
+              <SessionExpiredProvider>
+                <AppLayout zone="Dashboard">{children}</AppLayout>
+              </SessionExpiredProvider>
+            </AuthProvider>
+          </ModalProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
