@@ -41,3 +41,4 @@ yarn-error.log*
 
 # next.js generated type reference (regenerated per app on dev/build)
 **/next-env.d.ts
+.atl/
