@@ -2,7 +2,12 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { AppLayout, AuthProvider, ModalProvider, SessionExpiredProvider, ThemeProvider } from "@hce/shared";
+import {
+  AuthProvider,
+  ModalProvider,
+  SessionExpiredProvider,
+  ThemeProvider,
+} from "@hce/shared";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,7 +41,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <ModalProvider>
             <AuthProvider>
               <SessionExpiredProvider>
-                <AppLayout zone="Dashboard">{children}</AppLayout>
+                {children}
               </SessionExpiredProvider>
             </AuthProvider>
           </ModalProvider>
